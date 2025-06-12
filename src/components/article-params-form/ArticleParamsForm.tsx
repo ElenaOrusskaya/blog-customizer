@@ -9,8 +9,8 @@ import { Separator } from '../../ui/separator/Separator';
 import { ArrowButton } from '../../ui/arrow-button/ArrowButton';
 import { Button } from '../../ui/button/Button';
 
-import { OptionType } from 'src/constants/articleProps';
 import {
+	OptionType,
 	fontFamilyOptions,
 	fontSizeOptions,
 	fontColors,
