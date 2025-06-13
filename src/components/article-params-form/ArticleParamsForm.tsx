@@ -1,7 +1,7 @@
 import styles from './ArticleParamsForm.module.scss';
 import clsx from 'clsx';
-import { FormEvent, useEffect, useRef } from 'react';
-
+import { FormEvent, useRef, useState } from 'react';
+import { useClose } from '../hooks/useClose';
 import { Text } from '../../ui/text/Text';
 import { Select } from '../../ui/select/Select';
 import { RadioGroup } from '../../ui/radio-group/RadioGroup';
@@ -16,52 +16,40 @@ import {
 	fontColors,
 	backgroundColors,
 	contentWidthArr,
+	defaultArticleState,
 } from 'src/constants/articleProps';
 
-import { ArticleStyleSettings } from 'src/index';
+import { ArticleStyleSettings } from '../app/App';
 
 type Props = {
-	openState: boolean;
-	onToggleSidebar: () => void;
-	onCloseSidebar: () => void;
-	formState: ArticleStyleSettings;
-	onChange: (state: ArticleStyleSettings) => void;
-	onSubmit: () => void;
-	onReset: () => void;
+	pageState: ArticleStyleSettings;
+	onChangePageStyle: (state: ArticleStyleSettings) => void;
 };
 
-export const ArticleParamsForm = ({
-	openState,
-	onToggleSidebar,
-	onCloseSidebar,
-	formState,
-	onChange,
-	onSubmit,
-	onReset,
-}: Props) => {
+export const ArticleParamsForm = ({ pageState, onChangePageStyle }: Props) => {
+	const [openState, setOpenState] = useState(false);
+	const [formState, setFormState] =
+		useState<ArticleStyleSettings>(defaultArticleState);
 	const formRef = useRef<HTMLElement | null>(null);
 
-	useEffect(() => {
-		function handleClickOutside(event: MouseEvent) {
-			const sidebar = formRef.current;
-			if (!sidebar) return;
+	useClose({
+		isOpen: openState,
+		onClose: () => setOpenState(false),
+		rootRef: formRef,
+	});
 
-			if (openState && !sidebar.contains(event.target as Node)) {
-				onCloseSidebar();
-			}
-		}
+	const toggleSidebar = () => {
+		setOpenState((prev) => {
+			if (!prev) setFormState(pageState);
+			return !prev;
+		});
+	};
 
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [openState, onCloseSidebar]);
-	// обновление одного поля
 	const handleSelectChange = (
 		field: keyof ArticleStyleSettings,
 		selected: OptionType
 	) => {
-		onChange({
+		setFormState({
 			...formState,
 			[field]: selected,
 		});
@@ -69,13 +57,21 @@ export const ArticleParamsForm = ({
 
 	const handleSubmit = (evt: FormEvent) => {
 		evt.preventDefault();
-		onSubmit();
+		onChangePageStyle(formState);
+		setOpenState(false);
+	};
+
+	const handleReset = () => {
+		setFormState(defaultArticleState);
+		onChangePageStyle(defaultArticleState);
+		setOpenState(false);
 	};
 
 	return (
 		<>
-			<ArrowButton isOpen={openState} onClick={onToggleSidebar} />
+			<ArrowButton isOpen={openState} onClick={toggleSidebar} />
 			<aside
+				ref={formRef}
 				className={clsx(styles.container, {
 					[styles.container_open]: openState,
 				})}>
@@ -137,9 +133,8 @@ export const ArticleParamsForm = ({
 							title='Сбросить'
 							type='clear'
 							htmlType='button'
-							onClick={onReset}
+							onClick={handleReset}
 						/>
-
 						<Button title='Применить' type='apply' htmlType='submit' />
 					</div>
 				</form>
